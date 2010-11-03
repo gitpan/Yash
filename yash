@@ -1,0 +1,134 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Pod::Usage;
+use Getopt::Long;
+
+use YAML;
+
+=encoding utf8
+
+=head1 NAME
+
+Yash - A script to load YAML file inside shell scripts
+
+=head1 VERSION
+
+Version 0.1
+
+=cut
+
+our $VERSION = '0.1';
+
+=head1 SYNOPSIS
+
+Get an item from an array inside a nested array:
+
+   yash [list of hash keys] [array index] <file.yml
+
+or
+
+   yash -f file.yml [list of hash keys] [array index]
+
+
+Check if the reached item is a scalar/array/hash
+
+   yash [--scalar|--array|--hash] [list of hash keys] [array index] <file.yml
+
+or
+
+   yash -f file.yml [--scalar|--array|--hash] [list of hash keys] [array index] <file.yml
+
+See the tests for more examples.
+
+=cut
+
+my $help;
+my $file;
+my $ishash;
+my $isscalar;
+my $isarray;
+
+GetOptions ("help"   => \$help,
+            "file=s" => \$file,
+            "hash"   => \$ishash,
+            "scalar" => \$isscalar,
+            "array"  => \$isarray,
+    );
+
+pod2usage({
+    -exitval => 2,
+    -verbose => 2,
+}) if $help;
+
+
+my @lines;
+if ($file) {
+    my $input;
+    open $input, $file or die "ERROR: unable to open file $file\n";
+    @lines = <$input>;
+    close $input;
+}
+else {
+    @lines = <STDIN>;
+}
+my $yaml = Load(join("\n", @lines)) or die "ERROR: unable to find a YAML document";
+
+foreach (@ARGV) {
+    if ($yaml =~ /HASH/) {
+        $yaml = $yaml->{$_};
+        die "ERROR: key '$_' not found.\n" unless defined($yaml);
+    }
+    else {
+        if ($yaml =~ /ARRAY/) {
+            $yaml = $yaml->[$_];
+            die "ERROR: index '$_' out of bounds.\n" unless defined($yaml);
+        }
+        else {
+            die "Error: a scalar has been reached.\n";
+        }
+    }
+}
+
+if ($ishash || $isarray || $isscalar) {
+    if ($ishash) {
+        if ($yaml =~ /HASH/) {
+            exit 0;
+        }
+        else {
+        exit 1;
+        }
+    }
+    if ($isarray) {
+        if ($yaml =~ /ARRAY/) {
+            exit 0;
+        }
+        else {
+            exit 1;
+        }
+    }
+    if ($isscalar) {
+        if ($yaml =~ /(?:ARRAY)|(?:HASH)/) {
+            exit 1;
+        }
+        else {
+            exit 0;
+        }
+    }
+}
+else {
+    if ($yaml =~ /HASH/) {
+        print Dump($yaml);
+    }
+    else {
+        if ($yaml =~ /ARRAY/) {
+            print Dump($yaml);
+        }
+        else {
+            print $yaml, "\n";
+        }
+    }
+}
+

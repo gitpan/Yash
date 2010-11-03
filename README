@@ -1,0 +1,31 @@
+Yash
+
+Yash is a simple script designed to load YAML files inside of shell
+scripts.
+
+USAGE
+
+Get an item from an array inside a nested array:
+   yash [list of hash keys] [array index] <file.yml
+
+Check if the reached item is a scalar/array/hash
+   yash [--scalar|--array|--hash] [list of hash keys] [array index] <file.yml
+
+See the tests for more examples.
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Build.PL
+	./build
+ 	./build test
+	./build install
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2010 Olivier Schwander
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
