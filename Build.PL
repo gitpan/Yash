@@ -4,7 +4,7 @@ use Module::Build;
 
 my $builder = Module::Build->new(
     dist_name      => 'Yash',
-    dist_version   => '0.1',
+    dist_version   => '0.2',
     dist_abstract  => 'Manipulation of Yaml files in shell scripts',
     license        => 'perl',
     dist_author    => 'Olivier Schwander <iderrick@cpan.org>',

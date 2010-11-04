@@ -16,32 +16,71 @@ Yash - A script to load YAML file inside shell scripts
 
 =head1 VERSION
 
-Version 0.1
+Version 0.2
 
 =cut
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 =head1 SYNOPSIS
 
-Get an item from an array inside a nested array:
+yash [-f file] [--scalar|--array|--hash|--count] [path]
 
-   yash [list of hash keys] [array index] <file.yml
+=head1 USAGE
 
-or
+Print the content of a node (in YAML):
 
-   yash -f file.yml [list of hash keys] [array index]
+   yash [path]
 
+Check if the reached item is a scalar/array/hash:
 
-Check if the reached item is a scalar/array/hash
+   yash [--scalar|--array|--hash] [path]
 
-   yash [--scalar|--array|--hash] [list of hash keys] [array index] <file.yml
+Count the size of a list, the number of keys of a hash (returns 1 for a scalar):
 
-or
+  yash --count [path]
 
-   yash -f file.yml [--scalar|--array|--hash] [list of hash keys] [array index] <file.yml
+Print the values of a list or a hash (at least one line for each
+element, but some elements can take several lines as they are dumped in
+YAML)
+
+  yash --values [path]
+
+Print the keys of a hash (one line per key, in plain text):
+
+  yash --keys [path]
+
+Path is the sequence of array indexes or hash keys needed to reach the
+wanted node. It can be omitted in order to select the root node.
+
+YAML data can come from the standard input or from the file given by the -f option.
 
 See the tests for more examples.
+
+Note: for C<--keys> you should use a while loop instead of a for loop to
+avoid problems with spaces in values.
+
+  yash -f $CONFIG | while read line; do
+    print $line
+  done
+
+=head1 BUGS
+
+Please use rt.cpan.org for tracking bugs.  The list of current open
+bugs is at
+    L<http://rt.cpan.org/Dist/Display.html?Queue=Yash>.
+
+To report a new bug, go to
+    L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Yash>
+
+=head1 AUTHOR AND COPYRIGHT
+
+Copyright (c) 2010 Olivier Schwander <olivier.schwander@ens-lyon.org>
+
+=head1 LICENSE
+
+Yash is free software. You can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
 
@@ -50,12 +89,18 @@ my $file;
 my $ishash;
 my $isscalar;
 my $isarray;
+my $wantkeys;
+my $wantvalues;
+my $wantcount;
 
 GetOptions ("help"   => \$help,
             "file=s" => \$file,
             "hash"   => \$ishash,
             "scalar" => \$isscalar,
             "array"  => \$isarray,
+            "keys"   => \$wantkeys,
+            "values" => \$wantvalues,
+            "count"  => \$wantcount,
     );
 
 pod2usage({
@@ -92,43 +137,82 @@ foreach (@ARGV) {
     }
 }
 
-if ($ishash || $isarray || $isscalar) {
-    if ($ishash) {
-        if ($yaml =~ /HASH/) {
-            exit 0;
-        }
-        else {
+if ($ishash) {
+    if ($yaml =~ /HASH/) {
+        exit 0;
+    }
+    else {
         exit 1;
-        }
-    }
-    if ($isarray) {
-        if ($yaml =~ /ARRAY/) {
-            exit 0;
-        }
-        else {
-            exit 1;
-        }
-    }
-    if ($isscalar) {
-        if ($yaml =~ /(?:ARRAY)|(?:HASH)/) {
-            exit 1;
-        }
-        else {
-            exit 0;
-        }
     }
 }
-else {
+if ($isarray) {
+    if ($yaml =~ /ARRAY/) {
+        exit 0;
+    }
+    else {
+        exit 1;
+    }
+}
+if ($isscalar) {
+    if ($yaml =~ /(?:ARRAY)|(?:HASH)/) {
+        exit 1;
+    }
+    else {
+        exit 0;
+    }
+}
+
+if ($wantcount) {
+    my $count;
     if ($yaml =~ /HASH/) {
-        print Dump($yaml);
+        $count = keys %{$yaml};
     }
     else {
         if ($yaml =~ /ARRAY/) {
-            print Dump($yaml);
+            $count = @{$yaml};
         }
         else {
-            print $yaml, "\n";
+            $count = 1;
         }
+    }
+    print $count, "\n";
+    exit 0;
+}
+
+if ($wantkeys) {
+    if ($yaml =~ /HASH/) {
+        $, = "\n";
+        print keys %{$yaml};
+        print "\n";
+        exit 0;
+    }
+    exit 1;
+}
+
+if ($wantvalues) {
+    if ($yaml =~ /HASH/) {
+        $, = "\n";
+        print Dump(values %{$yaml});
+        exit 0;
+    }
+    if ($yaml =~ /ARRAY/) {
+        $, = "\n";
+        print @{$yaml};
+        print "\n";
+        exit 0;
+    }
+    exit 1;
+}
+
+if ($yaml =~ /HASH/) {
+    print Dump($yaml);
+}
+else {
+    if ($yaml =~ /ARRAY/) {
+        print Dump($yaml);
+    }
+    else {
+        print $yaml, "\n";
     }
 }
 

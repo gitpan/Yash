@@ -3,7 +3,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile
 (
           'DISTNAME' => 'Yash',
-          'VERSION' => '0.1',
+          'VERSION' => '0.2',
           'PREREQ_PM' => {
                            'Test::More' => 0,
                            'YAML' => 0
